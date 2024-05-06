@@ -2,181 +2,184 @@ package Task1;
 
 import java.time.*;
 
-class Shift{
-	String timing;
-	String days;
-	
+class Shift {
+    String timing;
+    String days;
 
+    public String ShiftTiming(String shTime, String day) {
+        this.timing = shTime;
+        this.days = day;
+        String shifttime = null;
+        System.out.println("Received ShiftTiming: "+timing+"& Day "+day);
 
-	public String ShiftTiming(String shTime, String day) {
-	    this.timing = shTime;
-	    this.days = day;
-	    String shifttime = null;
+        if (timing.equalsIgnoreCase("OFF")) {
+            System.out.println("Happy Holiday!!!");
+            shifttime = day + "--OFF";
+        } else {
+            System.out.println("Entering timing Parse Block...");
+            shifttime = parseShiftTime(timing, day);
+        }
 
-	    if (timing.equalsIgnoreCase("OFF")) {
-	    	System.out.println("Happy Holiday!!!");
-	        shifttime = day + "--OFF";
-	    } 
-	    else {
-	        System.out.println("Entering timing Parse Block...");
-	        String[] time = timing.split("-");
-	        String startTime = time[0];
-	        String endTime = time[1];
-	        String breakTime = time[2];
-	        
-	        //Conversion of String to Integer
-	        int shour = Integer.parseInt(startTime.substring(0, 2));
-	        int sminute = Integer.parseInt(startTime.substring(2, 4));
-	        int ehour = Integer.parseInt(endTime.substring(0, 2));
-	        int eminute = Integer.parseInt(endTime.substring(2, 4));
-	        int btime = Integer.parseInt(breakTime.substring(1, 3));
-	        
-	        //Conversion of Integer to LocalTime Object
-	        LocalTime start_time = LocalTime.of(shour, sminute);
-	        LocalTime end_time = LocalTime.of(ehour, eminute);
-	        LocalTime break_time = LocalTime.of(0, btime);
-	        
-	        //Creating Duration Object from LocalTime Object
-	        Duration duration = Duration.between(start_time, end_time);
+        return shifttime;
+    }
 
-	        long durationSeconds = duration.getSeconds();
-	        durationSeconds -= btime * 60; // Convert break time from minutes to seconds
-	        duration = Duration.ofSeconds(durationSeconds);
-	        System.out.println("duration(With Break Time)"+duration);
-	        
-	        
+    private String parseShiftTime(String timing, String day) {
+        String[] time = timing.split("-");
+        String startTime = time[0];
+        String endTime = time[1];
+        String breakTime = time[2];
 
-	        shifttime = day + "--Start: " + start_time + " End: " + end_time + " Break Time: "+break_time +" Duration (with break): " + duration;
-	    }
+        // Conversion of String to Integer to LocalTime Object
+        LocalTime start_time = parseTime(startTime);
+        LocalTime end_time = parseTime(endTime);
+        int breakTimeMinutes = parseBreakTime(breakTime);
+        System.out.println("breakTimeMinutes" + breakTimeMinutes);
 
-	    return shifttime;
-	}
+        // Creating Duration Object from LocalTime Object
+        Duration duration = calculateDuration(start_time, end_time, breakTimeMinutes);
 
-	
-	public String Pattern(String details) {
-	    System.out.println("Entering Shift Pattern Identification Block");
-	    String[] sp = details.split(",");
-	    
-	    String patterns;
-	    boolean equal = true;    
-	    if (sp.length > 1) {
-	        String dailyDays = null;
+        return day + "--Start: " + start_time + " End: " + end_time + " Break Time: " + formatBreakTime(breakTimeMinutes)
+                + " Duration (with break): " + duration;
+    }
 
-	        for (String shift : sp) {
-	        	System.out.println("Length of sp is "+shift.length());
-	    	    System.out.println("shift of sp is "+shift);
-	            if (!shift.equals("OFF")) {
-	            	dailyDays = shift;
-	                System.out.println("dailyDays of sp is "+dailyDays);
-	                break;
-	            }
-	        }
+    private LocalTime parseTime(String time) {
+        int hours = Integer.parseInt(time.substring(0, 2));
+        int minutes = Integer.parseInt(time.substring(2, 4));
+        return LocalTime.of(hours, minutes);
+    }
 
-	        if (dailyDays != null) {
-	            for (String shift : sp) {
-	            	System.out.println("After Break Statement Shift  is "+shift);
-	                if (shift.length() > 3 && !shift.equals("OFF") && !shift.equals(dailyDays)) {
-	                    equal = false;
-	                    break;
-	                }
-	            }
-	        } else {
-	            equal = true;
-	        }
-	    }
-	    
-	    if(equal)
-	        return patterns = "Regular";
-	    return patterns = "Variable";    
-	}
+    private int parseBreakTime(String breakTime) {
+        return Integer.parseInt(breakTime.substring(1, 3));
+    }
 
+    private Duration calculateDuration(LocalTime startTime, LocalTime endTime, int breakTimeMinutes) {
+        Duration duration = Duration.between(startTime, endTime);
+        long durationSeconds = duration.getSeconds() - (breakTimeMinutes * 60);
+        return Duration.ofSeconds(durationSeconds);
+    }
 
-	//											17:30          09:00				
-	public String calculateShiftDuration(String endTime, String startTime) {
-	    System.out.println("----------Method Duration Calculation Starts----------------");
-	    String finalDuration;
-	    int prevEndHour = 0,prevEndMinute=0;
-	    int prevStartHour =0,prevStartMinute=0;
-	    int b = 24,endTotal=0;
-//	    System.out.println("Inside endtime"+endTime+"Inside starttime"+startTime);
+    private String formatBreakTime(int breakTimeMinutes) {
+        return String.format("%02d:%02d", breakTimeMinutes / 60, breakTimeMinutes % 60);
+    }
 
-	    if (!startTime.equals("OFF") & !endTime.equals("OFF")) {
-	        int endHour = Integer.parseInt(endTime.substring(0, 2));
-	        int endMinute = Integer.parseInt(endTime.substring(2, 4));
-	        System.out.println("End Hour: " + endHour + " End Minute: " + endMinute);
+    public String Pattern(String details) {
+        System.out.println("Entering Shift Pattern Identification Block");
+        String[] sp = details.split(",");
 
-	        int startHour = Integer.parseInt(startTime.substring(0, 2));
-	        int startMinute = Integer.parseInt(startTime.substring(2, 4));
-	        System.out.println("Start Hour: " + startHour + " Start Minute: " + startMinute);
+        String patterns;
+        boolean equal = true;
+        if (sp.length > 1) {
+            String dailyDays = null;
 
+            for (String shift : sp) {
+                System.out.println("Length of sp is " + shift.length());
+                System.out.println("shift of sp is " + shift);
+                if (!shift.equals("OFF")) {
+                    dailyDays = shift;
+                    System.out.println("dailyDays of sp is " + dailyDays);
+                    break;
+                }
+            }
 
-	        if (endHour > startHour) {
-	            endTotal = (b - endHour + startHour) * 60;
-	            if (endMinute > startMinute) {
-	                endTotal -= (endMinute - startMinute);
-	            } else {
-	                endTotal += (startMinute - endMinute);
-	            }
-	        } else if (endHour < startHour) {
-	            endTotal = (startHour - endHour) * 60;
-	            if (endMinute > startMinute) {
-	                endTotal += (endMinute - startMinute);
-	            } else {
-	                endTotal += (startMinute - endMinute);
-	            }
-	        }
+            if (dailyDays != null) {
+                for (String shift : sp) {
+                    System.out.println("After Break Statement Shift  is " + shift);
+                    if (shift.length() > 3 && !shift.equals("OFF") && !shift.equals(dailyDays)) {
+                        equal = false;
+                        break;
+                    }
+                }
+            } else {
+                equal = true;
+            }
+        }
 
-	        int hours = endTotal / 60;
-	        int minutes = endTotal % 60;
+        if (equal)
+            return patterns = "Regular";
+        return patterns = "Variable";
+    }
+    
+    public String calculateBetweenDays(String endTime, String startTime) {
+        System.out.println("----------Method Duration Calculation Starts----------------");
+        System.out.println("Inward Input Endtime"+endTime+"Inward startTime"+startTime);
+        String finalDuration = null;
+        int prevEndHour = 0, prevEndMinute = 0;
+        int prevStartHour = 0, prevStartMinute = 0;
+        int b = 24, endTotal = 0;
 
-	        finalDuration = "Duration between days " + hours + ":" + minutes;
-	    } 
-	    else 
-	    {
-	        System.out.println("Off days Calculation...");
-	        if (startTime.equals("OFF")) {
-	            System.out.println("End Time: " + endTime + ", Start Time: " + startTime);
-	            startTime = "2400";
+        if (!startTime.equals("OFF") && !endTime.equals("OFF")) {
+            int[] parsedTiming = parseInt(startTime, endTime);
+            prevStartHour = parsedTiming[0];
+            prevStartMinute = parsedTiming[1];
+            prevEndHour = parsedTiming[2];
+            prevEndMinute = parsedTiming[3];
+            System.out.println("Start Hour: " + prevStartHour + " Start Minute: " + prevStartMinute);
 
-	            System.out.println("Replaced OFF Start Time: " + startTime);
-	            prevStartHour = Integer.parseInt(startTime.substring(0, 2));
-		        prevStartMinute = Integer.parseInt(startTime.substring(2));
-	            prevEndHour = Integer.parseInt(endTime.substring(0, 2));
-		        prevEndMinute = Integer.parseInt(endTime.substring(2));
-	            
-		        System.out.println("Parsed prevEndHour: " + prevEndHour);
-		        System.out.println("Parsed prevEndMinute: " + prevEndMinute);
-		        endTotal = (b * 60)-(prevEndHour * 60)-prevEndMinute;
-		        endTotal = endTotal+(prevStartHour*60)+prevStartMinute;
-	        }
-//	        if (endTime.equals("OFF")) {
-//	            System.out.println("End Time: " + endTime + ", Start Time: " + startTime);
-//	            endTime = "0000";
-//	            System.out.println("Replaced OFF End Time: " + endTime);
-//	            System.out.println("Off End Time: " + endTime.length()+"& Off Start Time: " + startTime.length() );
-//		        prevEndHour = Integer.parseInt(endTime.substring(0, 2));
-//		        prevEndMinute = Integer.parseInt(endTime.substring(2));
-//		        System.out.println("Parsed prevEndHour: " + prevEndHour);
-//		        System.out.println("Parsed prevEndMinute: " + prevEndMinute);
-//	        }
-	        if (endTime.equals("OFF")) {
-	        	endTime = "2400";
-	        	prevEndHour = Integer.parseInt(endTime.substring(0, 2));
-		        prevEndMinute = Integer.parseInt(endTime.substring(2,4));
-		        prevStartHour = Integer.parseInt(startTime.substring(0, 2));
-		        prevStartMinute = Integer.parseInt(startTime.substring(2,4));
-		        endTotal = (prevEndHour*60) + prevEndMinute + prevStartHour*60 + prevStartMinute;
-	        }
-	    
-			int hours = endTotal / 60;
-	        int minutes = endTotal % 60;
-	        
-	        finalDuration = "Duration between days " + hours + ":" + minutes;
-	    }
+            if (prevEndHour > prevStartHour) {
+                endTotal = (b - prevEndHour + prevStartHour) * 60;
+                if (prevEndMinute > prevStartMinute) {
+                    endTotal -= (prevEndMinute - prevStartMinute);
+                } else {
+                    endTotal += (prevStartMinute - prevStartMinute);
+                }
+            } else if (prevEndHour < prevStartHour) {
+                endTotal = (prevStartHour - prevEndHour) * 60;
+                if (prevEndMinute > prevStartMinute) {
+                    endTotal += (prevEndMinute - prevStartMinute);
+                } else {
+                    endTotal += (prevStartMinute - prevEndMinute);
+                }
+            }
 
-	    return finalDuration;
-	    
-	}
+            int hours = endTotal / 60;
+            int minutes = endTotal % 60;
+
+            finalDuration = "Duration between days " + hours + ":" + minutes;
+        } else {
+            System.out.println("Off days Calculation...");
+            if (startTime.equals("OFF")) {
+                System.out.println("End Time: " + endTime + ", Start Time: " + startTime);
+                startTime = "2400";
+                int[] parsedTiming = parseInt(startTime, endTime);
+                prevStartHour = parsedTiming[0];
+                prevStartMinute = parsedTiming[1];
+                prevEndHour = parsedTiming[2];
+                prevEndMinute = parsedTiming[3];
+                System.out.println("Parsed prevEndHour: " + prevEndHour);
+                System.out.println("Parsed prevEndMinute: " + prevEndMinute);
+                endTotal = (b * 60) - (prevEndHour * 60) - prevEndMinute;
+                endTotal = endTotal + (prevStartHour * 60) + prevStartMinute;
+            }
+            if (endTime.equals("OFF")) {
+                endTime = "2400";
+                int[] parsedTiming = parseInt(startTime, endTime);
+                prevStartHour = parsedTiming[0];
+                prevStartMinute = parsedTiming[1];
+                prevEndHour = parsedTiming[2];
+                prevEndMinute = parsedTiming[3];
+                endTotal = (prevEndHour * 60) + prevEndMinute + (prevStartHour * 60) + prevStartMinute;
+            }
+            finalDuration = calculateDurationBtDays(endTotal);
+        }
+        return finalDuration;
+    }
+
+    public String calculateDurationBtDays(int endTotal) {
+        int hours = endTotal / 60;
+        int minutes = endTotal % 60;
+        String finalDuration = "Duration between days " + hours + ":" + minutes;
+        return finalDuration;
+    }
+
+    public int[] parseInt(String startTime, String endTime) {
+        int[] parsedTiming = new int[4];
+    	parsedTiming[0] = Integer.parseInt(startTime.substring(0, 2));
+        parsedTiming[1] = Integer.parseInt(startTime.substring(2, 4));
+        parsedTiming[2] = Integer.parseInt(endTime.substring(0, 2));
+        parsedTiming[3] = Integer.parseInt(endTime.substring(2, 4));
+        return parsedTiming;
+    }
+
 
 }
 
@@ -186,13 +189,13 @@ public class ShiftProcess {
 		
 		String[] days = {"Day1", "Day2", "Day3", "Day4", "Day5", "Day6", "Day7"};	
 		String details="OFF,0900-1730-B30,0900-1700-B30,0900-1730-B30,0900-1730-B30,OFF,0900-1730-B30";
-				
+		System.out.println(details.length());
 		Shift s1=new Shift();
 		
 		//Conversion of String to String Array
 		String[] shiftDetails = details.split(",");
 		for(String d:shiftDetails) {
-			System.out.println(d);
+			System.out.println(d.toUpperCase()+"---"+d.length());
 		}
 		System.out.println("---------------------------------------------------");
 		
@@ -230,7 +233,7 @@ public class ShiftProcess {
 
             System.out.println("Final End Time: " + endTime + ", Final Start Time: " + startTime);
             
-            String duration = s1.calculateShiftDuration(endTime, startTime);
+            String duration = s1.calculateBetweenDays(endTime, startTime);
             System.out.println("Duration between: " + days[i] + " end time and " + days[i + 1] + " start time:");
             System.out.println(duration);
             System.out.println("----------Method Duration Calculation Ends----------------");
